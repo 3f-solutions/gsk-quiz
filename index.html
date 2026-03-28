@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GSK-Quiz — DPSG St. Barbara Pulheim</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f1a2e; color: #fff; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+  /* Header */
+  .header { background: #1B2A4A; width: 100%; padding: 18px 0 14px; text-align: center; border-bottom: 4px solid #F5C518; }
+  .header h1 { font-size: 1.6rem; color: #F5C518; letter-spacing: 1px; }
+  .header .sub { font-size: 0.85rem; color: #8ba5c8; margin-top: 4px; }
+
+  /* Controls */
+  .controls { display: flex; gap: 12px; margin: 18px 0 10px; flex-wrap: wrap; justify-content: center; }
+  .controls button { padding: 10px 22px; border: 2px solid #F5C518; background: transparent; color: #F5C518; font-size: 0.95rem; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .controls button:hover { background: #F5C518; color: #1B2A4A; }
+  .controls button.active { background: #F5C518; color: #1B2A4A; font-weight: 700; }
+
+  /* Scoreboard */
+  .scoreboard { display: flex; gap: 16px; margin: 10px 0 16px; flex-wrap: wrap; justify-content: center; }
+  .team { background: #1B2A4A; border: 2px solid #2a4a7a; border-radius: 8px; padding: 10px 18px; min-width: 140px; text-align: center; }
+  .team .name { font-size: 0.85rem; color: #8ba5c8; }
+  .team .score { font-size: 1.8rem; font-weight: 700; color: #F5C518; }
+  .team .score-btns { display: flex; gap: 4px; margin-top: 6px; justify-content: center; }
+  .team .score-btns button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #4A90C4; background: #1a3355; color: #fff; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .team .score-btns button:hover { background: #4A90C4; }
+
+  /* Grid */
+  .board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; max-width: 900px; padding: 0 16px; margin-bottom: 24px; }
+  .cat-header { background: #1B2A4A; border: 2px solid #F5C518; border-radius: 6px; padding: 12px 6px; text-align: center; font-weight: 700; font-size: 0.8rem; color: #F5C518; line-height: 1.3; min-height: 60px; display: flex; align-items: center; justify-content: center; }
+  .cell { background: #1f3a6a; border: 2px solid #2a5090; border-radius: 6px; padding: 14px 6px; text-align: center; font-size: 1.5rem; font-weight: 700; color: #F5C518; cursor: pointer; transition: all 0.15s; min-height: 60px; display: flex; align-items: center; justify-content: center; user-select: none; }
+  .cell:hover { background: #2a5598; transform: scale(1.04); }
+  .cell.done { background: #111d30; border-color: #1a2a40; color: #2a3a50; cursor: default; transform: none; }
+
+  /* Modal */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; padding: 16px; }
+  .overlay.show { display: flex; }
+  .modal { background: #1B2A4A; border: 3px solid #F5C518; border-radius: 12px; max-width: 700px; width: 100%; padding: 32px 28px; position: relative; max-height: 90vh; overflow-y: auto; }
+  .modal .cat-label { font-size: 0.8rem; color: #4A90C4; text-transform: uppercase; letter-spacing: 1px; }
+  .modal .points-label { font-size: 2.5rem; font-weight: 700; color: #F5C518; margin: 6px 0 16px; }
+  .modal .type-badge { display: inline-block; background: #4A90C4; color: #fff; padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 14px; }
+  .modal .question { font-size: 1.15rem; line-height: 1.6; margin-bottom: 20px; }
+  .modal .options { list-style: none; margin-bottom: 20px; }
+  .modal .options li { background: #14253f; border: 1px solid #2a4a7a; border-radius: 6px; padding: 10px 14px; margin-bottom: 8px; font-size: 1rem; }
+  .modal .answer { background: #0d2a1a; border: 2px solid #2ecc71; border-radius: 8px; padding: 14px 16px; font-size: 1rem; line-height: 1.5; display: none; }
+  .modal .answer.show { display: block; }
+  .modal .btn-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .modal button { padding: 10px 24px; border: none; border-radius: 6px; font-size: 0.95rem; cursor: pointer; font-weight: 600; }
+  .btn-reveal { background: #F5C518; color: #1B2A4A; }
+  .btn-close { background: #3a5a8a; color: #fff; }
+  .btn-close:hover { background: #4A90C4; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .board { gap: 5px; padding: 0 8px; }
+    .cat-header { font-size: 0.65rem; padding: 8px 3px; min-height: 50px; }
+    .cell { font-size: 1.1rem; padding: 10px 4px; min-height: 50px; }
+    .modal { padding: 20px 16px; }
+    .modal .points-label { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>GSK-Quiz</h1>
+  <div class="sub">DPSG Stamm St. Barbara Pulheim</div>
+</div>
+
+<div class="controls">
+  <button id="btn-jung" class="active" onclick="switchSet('jung')">Wölflinge & Juffis</button>
+  <button id="btn-alt" onclick="switchSet('alt')">Pfadis & Rover</button>
+  <button onclick="resetBoard()" style="border-color:#e74c3c;color:#e74c3c;">Zurücksetzen</button>
+</div>
+
+<div class="scoreboard">
+  <div class="team">
+    <div class="name">Team 1</div>
+    <div class="score" id="score1">0</div>
+    <div class="score-btns"><button onclick="addScore(1,-100)">−</button><button onclick="addScore(1,100)">+</button></div>
+  </div>
+  <div class="team">
+    <div class="name">Team 2</div>
+    <div class="score" id="score2">0</div>
+    <div class="score-btns"><button onclick="addScore(2,-100)">−</button><button onclick="addScore(2,100)">+</button></div>
+  </div>
+  <div class="team">
+    <div class="name">Team 3</div>
+    <div class="score" id="score3">0</div>
+    <div class="score-btns"><button onclick="addScore(3,-100)">−</button><button onclick="addScore(3,100)">+</button></div>
+  </div>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="overlay" id="overlay" onclick="event.target===this&&closeModal()">
+  <div class="modal">
+    <div class="cat-label" id="m-cat"></div>
+    <div class="points-label" id="m-pts"></div>
+    <div class="type-badge" id="m-type"></div>
+    <div class="question" id="m-question"></div>
+    <ul class="options" id="m-options"></ul>
+    <div class="answer" id="m-answer"></div>
+    <div class="btn-row">
+      <button class="btn-reveal" id="btn-reveal" onclick="revealAnswer()">Antwort zeigen</button>
+      <button class="btn-close" onclick="closeModal()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA = {
+jung: {
+  cats: ["N\u00e4he &\nDistanz", "Sprache &\nUmgang", "Fotos &\nHandy", "K\u00f6rperkontakt\n& Spiele", "Sicherheit\n& Hilfe"],
+  questions: [
+    // Cat 1: Nähe und Distanz
+    [{pts:100,type:"Ja oder Nein?",q:"Darf ein*e Leiter*in mit dir allein Geheimnisse haben, die sonst niemand wissen darf?",opts:[],a:"Nein. Leiter*innen haben keine Geheimnisse mit Kindern. Wenn es etwas Wichtiges gibt, wird das offen besprochen."},
+     {pts:200,type:"Multiple Choice",q:"Was machst du, wenn ein Erwachsener auf dem Lager, den du nicht kennst, dir sagt, du sollst mitkommen?",opts:["A) Ich gehe mit, Erwachsene wissen ja, was richtig ist.","B) Ich frage erst eine*n Leiter*in, die ich kenne, ob das okay ist.","C) Ich schreie laut und renne weg."],a:"B \u2014 Wenn du unsicher bist, frag immer eine*n Leiter*in, die du kennst."},
+     {pts:300,type:"Multiple Choice",q:"Leiter*innen tragen auf dem Lager ein Erkennungszeichen wie z.B. ein Leitungshalstuch. Warum?",opts:["A) Weil es cool aussieht.","B) Damit die Leiter*innen sich untereinander erkennen.","C) Damit Kinder und auch Eltern sofort erkennen k\u00f6nnen, wer zur Leitung geh\u00f6rt."],a:"C \u2014 Gerade wenn viele Leute auf dem Lager sind, ist es wichtig, dass alle wissen, wer Leitung ist."},
+     {pts:400,type:"Wahr oder Falsch?",q:"Ein*e Leiter*in darf dich in einen Raum einschlie\u00dfen, wenn du dich schlecht benommen hast \u2014 als p\u00e4dagogische Konsequenz.",opts:[],a:"Falsch. Einsperren ist keine p\u00e4dagogische Ma\u00dfnahme und ist verboten. Es gibt andere, faire Konsequenzen."},
+     {pts:500,type:"Multiple Choice",q:"Was ist eine \u00abGrenzverletzung\u00bb?",opts:["A) Wenn jemand eine Regel im Spiel bricht.","B) Wenn jemand etwas tut, das sich f\u00fcr dich falsch anf\u00fchlt \u2014 auch wenn die Person es vielleicht gar nicht b\u00f6se gemeint hat.","C) Wenn jemand dich absichtlich \u00e4rgern will.","D) Nur wenn jemand dich anfasst, obwohl du es nicht willst."],a:"B \u2014 Auch wenn jemand es gut meint, kann es sich f\u00fcr dich trotzdem falsch anf\u00fchlen. Und es geht nicht nur um Anfassen \u2014 auch Worte oder Blicke k\u00f6nnen Grenzen verletzen."}],
+    // Cat 2: Sprache und Umgang
+    [{pts:100,type:"Ja oder Nein?",q:"D\u00fcrfen Leiter*innen dich anschreien, wenn du etwas falsch gemacht hast?",opts:[],a:"Nein. Leiter*innen sprechen mit dir in normalem Ton und auf Augenh\u00f6he \u2014 auch wenn sie mal sauer sind."},
+     {pts:200,type:"Wahr oder Falsch?",q:"D\u00fcrfen Leiter*innen dir einen Spitznamen geben, wenn sie den lustig finden?",opts:[],a:"Falsch. Spitznamen nur, wenn DU damit einverstanden bist. Nicht andersherum."},
+     {pts:300,type:"Multiple Choice",q:"Ein Kind in deiner Gruppe wird von anderen immer wieder ausgelacht und beleidigt. Was stimmt?",opts:["A) Die Leitung muss sich nur einmischen, wenn ein Erwachsener ein Kind beleidigt.","B) Die Leitung greift auch ein, wenn Kinder untereinander Grenzen verletzen.","C) Das ist normales Verhalten und geh\u00f6rt zum Gruppenalltag dazu."],a:"B \u2014 Leiter*innen achten auf den Umgang untereinander. Auch verbale Gewalt unter Kindern wird angesprochen."},
+     {pts:400,type:"Multiple Choice",q:"Du willst bei einem Programmpunkt nicht mitmachen. Was d\u00fcrfen Leiter*innen?",opts:["A) Sie d\u00fcrfen einmal nachfragen, ob du ihnen sagen magst warum \u2014 aber wenn du Nein sagst, ist Nein.","B) Sie d\u00fcrfen dich so lange fragen, bis du doch mitmachst, weil es ja f\u00fcr alle gedacht ist.","C) Sie d\u00fcrfen dich vom Rest des Programms ausschlie\u00dfen, wenn du nicht mitmachst."],a:"A \u2014 Ein*e Leiter*in darf einmal nachfragen, aber dann wird dein Nein respektiert. Kein Druck, kein Ausschluss."},
+     {pts:500,type:"Multiple Choice",q:"Was bedeutet \u00abFeedbackkultur\u00bb bei uns im Stamm?",opts:["A) Nur Leiter*innen d\u00fcrfen sagen, was gut oder schlecht l\u00e4uft.","B) Alle d\u00fcrfen R\u00fcckmeldung geben \u2014 auch Kinder an Leiter*innen \u2014 und alle nehmen Kritik ernst.","C) Man sagt sich gegenseitig nur nette Dinge, damit niemand traurig wird.","D) Feedback gibt es nur einmal im Jahr bei einem besonderen Treffen."],a:"B \u2014 Jede*r darf R\u00fcckmeldung geben, und jede*r nimmt Kritik an. Das gilt auch f\u00fcr Leiter*innen, die von Kindern auf Fehler hingewiesen werden."}],
+    // Cat 3: Fotos und Handy
+    [{pts:100,type:"Ja oder Nein?",q:"Darfst du \u00abNein\u00bb sagen, wenn jemand ein Foto von dir machen will?",opts:[],a:"Ja. Du darfst immer Nein sagen \u2014 sogar wenn deine Eltern eine Fotoerlaubnis unterschrieben haben."},
+     {pts:200,type:"Wahr oder Falsch?",q:"Leiter*innen d\u00fcrfen auf dem Lager heimlich Fotos von dir machen, solange die Fotos sch\u00f6n werden.",opts:[],a:"Falsch. Es muss f\u00fcr dich immer erkennbar sein, wenn jemand fotografiert. Heimlich fotografieren ist nicht erlaubt."},
+     {pts:300,type:"Multiple Choice",q:"Was passiert mit Fotos, die Leiter*innen auf dem Lager mit ihrem eigenen Handy machen?",opts:["A) Die bleiben auf dem Handy als Erinnerung.","B) Sie werden in einen gemeinsamen Ordner hochgeladen und danach innerhalb von vier Wochen vom Handy gel\u00f6scht.","C) Sie werden direkt in die WhatsApp-Gruppe der Eltern geschickt."],a:"B \u2014 Es gibt eine klare Regel: zentrale Ablage und L\u00f6schpflicht innerhalb von vier Wochen."},
+     {pts:400,type:"Multiple Choice",q:"Jemand postet ein Foto von dir in eine kleine WhatsApp-Gruppe. Du willst das nicht. Was stimmt?",opts:["A) In einer kleinen Gruppe ist das kein Problem, das sehen ja nicht viele.","B) Das ist nur dann ein Problem, wenn das Foto peinlich ist.","C) Auch in kleinen Gruppen gilt: Fotos nur mit deinem Einverst\u00e4ndnis."],a:"C \u2014 Die Gruppengr\u00f6\u00dfe spielt keine Rolle. Dein Recht am eigenen Bild gilt immer."},
+     {pts:500,type:"Multiple Choice",q:"Warum gibt es auf dem Lager eine Handyregelung f\u00fcr Leiter*innen?",opts:["A) Weil die Leitung sich sonst nur mit dem Handy besch\u00e4ftigt statt sich um euch zu k\u00fcmmern.","B) Weil Handys grunds\u00e4tzlich auf dem Lager verboten sind.","C) Damit Leiter*innen ein Vorbild sind und das Handy nur f\u00fcr abgesprochene Aufgaben nutzen \u2014 nicht sichtbar privat vor den Kindern.","D) Weil der Akku sonst auf dem Lager leer geht."],a:"C \u2014 Leiter*innen nutzen Handys nur f\u00fcr abgesprochene Zwecke. A klingt plausibel, ist aber nur ein Teil des Grundes."}],
+    // Cat 4: Körperkontakt
+    [{pts:100,type:"Ja oder Nein?",q:"Musst du dich umarmen lassen, wenn ein*e Leiter*in dich zur Begr\u00fc\u00dfung dr\u00fccken will?",opts:[],a:"Nein. Umarmungen nur, wenn du das selbst willst und die Initiative von dir ausgeht."},
+     {pts:200,type:"Wahr oder Falsch?",q:"Ein*e Leiter*in darf dich ins Wasser schubsen, wenn alle es lustig finden.",opts:[],a:"Falsch. Auch wenn es als Spa\u00df gemeint ist \u2014 Schubsen ist eine Grenzverletzung, egal ob andere lachen."},
+     {pts:300,type:"Multiple Choice",q:"Vor einem Spiel, bei dem man sich anfasst (z.B. Ringkampf oder Fangen mit Festhalten), muss die Leitung:",opts:["A) Einfach loslegen \u2014 K\u00f6rperkontakt geh\u00f6rt bei Pfadfindern dazu.","B) Vorher pr\u00fcfen, ob das Spiel auch ohne den K\u00f6rperkontakt geht, und mit euch dar\u00fcber sprechen.","C) Nur die \u00e4lteren Kinder mitspielen lassen."],a:"B \u2014 Gibt es eine Alternative ohne unangemessenen K\u00f6rperkontakt, wird diese gew\u00e4hlt."},
+     {pts:400,type:"Multiple Choice",q:"Wie ist das mit dem Duschen auf dem Lager geregelt?",opts:["A) Alle Kinder duschen gemeinsam, das ist am schnellsten.","B) Leiter*innen duschen mit den Kindern zusammen, damit sie aufpassen k\u00f6nnen.","C) Einzeln duschen wird erm\u00f6glicht. Wenn das nicht geht, gibt es feste Zeiten nach Gruppen. Leiter*innen duschen immer getrennt."],a:"C \u2014 Die Intimsph\u00e4re wird gesch\u00fctzt. Leiter*innen duschen nie mit Kindern zusammen."},
+     {pts:500,type:"Multiple Choice",q:"Was bedeutet \u00abIntimisph\u00e4re\u00bb und warum ist sie so wichtig?",opts:["A) Dass man beim Lager immer allein sein muss.","B) Dein pers\u00f6nlicher Bereich, in dem du dich sicher f\u00fchlst \u2014 z.B. beim Duschen, Umziehen oder Schlafen. Dieser Bereich wird gesch\u00fctzt, damit sich niemand unwohl f\u00fchlt.","C) Ein besonderer Raum auf dem Lager, in den nur Leiter*innen d\u00fcrfen.","D) Dass Jungs und M\u00e4dchen nie zusammen spielen d\u00fcrfen."],a:"B \u2014 Intimsph\u00e4re bedeutet: getrennte Schlafbereiche, einzeln duschen, Privatsph\u00e4re beim Umziehen."}],
+    // Cat 5: Sicherheit und Hilfe
+    [{pts:100,type:"Ja oder Nein?",q:"Gibt es auf dem Lager jemanden, an den du dich wenden kannst, wenn du dich unwohl f\u00fchlst?",opts:[],a:"Ja. Auf jedem Lager wird am Anfang eine Vertrauensperson vorgestellt, die f\u00fcr dich da ist."},
+     {pts:200,type:"Multiple Choice",q:"Auf dem Lager wird dir alles zu viel \u2014 zu laut, zu viele Leute. Was kannst du tun?",opts:["A) Durchhalten, das geh\u00f6rt zum Lager dazu.","B) In den Safe Place gehen \u2014 einen R\u00fcckzugsort, den es auf jedem Lager gibt.","C) Sofort nach Hause fahren."],a:"B \u2014 Es gibt auf jedem Lager einen Safe Place, an den du dich zur\u00fcckziehen kannst."},
+     {pts:300,type:"Multiple Choice",q:"Du m\u00f6chtest etwas loswerden, aber nicht deinen Namen dazuschreiben. Geht das?",opts:["A) Nein, ohne Namen nimmt das niemand ernst.","B) Ja, es gibt eine anonyme Beschwerdebox mit Zetteln und Stiften.","C) Nur wenn ein*e Leiter*in dir erlaubt, anonym zu bleiben."],a:"B \u2014 Die Beschwerdebox ist immer da und immer anonym. Kein*e Leiter*in muss dir das erlauben."},
+     {pts:400,type:"Multiple Choice",q:"Was stimmt \u00fcber die Lagerregeln?",opts:["A) Die Leiter*innen legen die Regeln fest und die Konsequenzen erfahrt ihr, wenn jemand etwas falsch macht.","B) Die Regeln UND die Konsequenzen werden am Anfang des Lagers allen erkl\u00e4rt \u2014 offen und transparent.","C) Es gibt keine festen Regeln, weil Pfadfinder frei sein sollen."],a:"B \u2014 Regeln und Konsequenzen werden zu Beginn des Lagers transparent gemacht. Keine \u00dcberraschungen."},
+     {pts:500,type:"Multiple Choice",q:"Du beobachtest, dass ein*e Leiter*in ein anderes Kind grob anpackt. Was ist richtig?",opts:["A) Das geht mich nichts an, das Kind soll sich selbst beschweren.","B) Ich erz\u00e4hle es einem Freund und wir beobachten, ob es nochmal passiert.","C) Ich sage es sofort einer anderen leitenden Person oder der Vertrauensperson \u2014 auch wenn ich mir nicht sicher bin, ob es schlimm war.","D) Ich spreche den/die Leiter*in direkt an und sage, dass ich das nicht okay finde."],a:"C \u2014 Hinschauen und Ansprechen ist wichtig. Du musst nicht selbst entscheiden, ob es schlimm genug war. D w\u00e4re mutig, aber du bist nicht verpflichtet, Erwachsene direkt zu konfrontieren."}]
+  ]
+},
+alt: {
+  cats: ["N\u00e4he, Distanz\n& Macht", "Sprache &\nFeedback", "Medien &\nDatenschutz", "K\u00f6rperkontakt\n& Intimsph\u00e4re", "Strukturen &\nPr\u00e4vention"],
+  questions: [
+    // Cat 1: Nähe, Distanz und Macht
+    [{pts:100,type:"Wahr oder Falsch?",q:"Leiter*innen d\u00fcrfen keine Geheimnisse mit einzelnen Kindern oder Jugendlichen haben.",opts:[],a:"Wahr. Vertrauliche Gespr\u00e4che sind m\u00f6glich, werden aber immer gegen\u00fcber der Leitungsrunde transparent gemacht."},
+     {pts:200,type:"Multiple Choice",q:"Warum tragen Leiter*innen auf dem Lager ein Erkennungszeichen und stellen sich neuen Teilnehmenden vor?",opts:["A) Weil es eine alte Pfadfindertradition ist.","B) Damit alle \u2014 auch Eltern und G\u00e4ste \u2014 sofort wissen, wer zur Leitung geh\u00f6rt und ansprechbar ist.","C) Damit die Leiter*innen sich untereinander besser erkennen."],a:"B \u2014 Erkennbarkeit sch\u00fctzt alle. Es geht darum, dass jede*r wei\u00df, an wen er/sie sich wenden kann."},
+     {pts:300,type:"Multiple Choice",q:"Ein*e Leiter*in ist privat eng mit einem*r Teilnehmer*in befreundet. Was sagt das GSK dazu?",opts:["A) Das ist verboten und die Person muss die Leitung abgeben.","B) Das ist egal, solange sie sich auf dem Lager professionell verh\u00e4lt.","C) Die Freundschaft muss transparent gemacht werden, damit Rollenkonflikte und Machtungleichgewichte offen besprochen werden k\u00f6nnen."],a:"C \u2014 Freundschaften sind nicht verboten, aber Transparenz ist Pflicht. B klingt vern\u00fcnftig, reicht aber nicht."},
+     {pts:400,type:"Multiple Choice",q:"Was versteht man unter \u00abMachtmissbrauch\u00bb im Kontext der Jugendarbeit?",opts:["A) Wenn der Vorstand eine Entscheidung trifft, die nicht allen gef\u00e4llt.","B) Wenn jemand mit mehr Einfluss oder Autorit\u00e4t andere unter Druck setzt, \u00fcbert\u00f6nt oder zu etwas bewegt, das sie eigentlich nicht wollen.","C) Wenn ein \u00e4lterer Pfadi beim Spiel seine Erfahrung nutzt, um zu gewinnen.","D) Wenn Leiter*innen Konsequenzen aussprechen, die vorher transparent gemacht wurden."],a:"B \u2014 Machtmissbrauch entsteht durch Ausnutzen eines Machtgef\u00e4lles. D ist keine Form von Machtmissbrauch, weil transparente Konsequenzen zur p\u00e4dagogischen Arbeit geh\u00f6ren."},
+     {pts:500,type:"Wahr oder Falsch?",q:"Das GSK gilt nur f\u00fcr den Umgang zwischen Leitenden und Kindern \u2014 was zwischen Leitenden untereinander passiert, ist Privatsache.",opts:[],a:"Falsch. Das GSK gilt f\u00fcr ALLE Beziehungsebenen: Leitung\u2013Kind, Leitung\u2013Leitung, Kind\u2013Kind, und auch f\u00fcr den Umgang mit stammfremden Erwachsenen."}],
+    // Cat 2: Sprache und Feedback
+    [{pts:100,type:"Ja oder Nein?",q:"D\u00fcrfen Kinder und Jugendliche Leiter*innen auf Fehlverhalten hinweisen?",opts:[],a:"Ja. Jede*r darf und soll auf Fehlverhalten hinweisen \u2014 und jede*r nimmt Kritik an."},
+     {pts:200,type:"Multiple Choice",q:"Ein Kind will beim Programmpunkt nicht mitmachen. Was ist die richtige Reaktion der Leitung?",opts:["A) Das Kind so lange motivieren, bis es doch mitmacht \u2014 schlie\u00dflich wurde das Programm extra vorbereitet.","B) Einmal nachfragen und die Entscheidung akzeptieren \u2014 zwischen Unlust und echtem Unwohlsein unterscheiden.","C) Das Kind vom restlichen Programm ausschlie\u00dfen, weil es die Gruppe st\u00f6rt."],a:"B \u2014 Ein einmaliges Nachfragen ist okay, wiederholter Druck nicht. A klingt p\u00e4dagogisch, ist aber Druck."},
+     {pts:300,type:"Multiple Choice",q:"Kinder in deiner Gruppe beleidigen sich regelm\u00e4\u00dfig gegenseitig. Was stimmt?",opts:["A) Das ist normales Verhalten in dem Alter und die Leitung muss nicht eingreifen.","B) Die Leitung greift nur ein, wenn ein Kind sich offiziell beschwert.","C) Die Leitung achtet aktiv auf den Umgang untereinander und greift bei verbalen Grenzverletzungen ein \u2014 auch proaktiv."],a:"C \u2014 Seit der GSK-\u00dcberarbeitung 2026 ist klar: verbale Gewalt unter Kindern ist genauso ein Thema. A und B sind verbreitete Irrt\u00fcmer."},
+     {pts:400,type:"Multiple Choice",q:"Welche Aussage passt NICHT in eine wertsch\u00e4tzende Feedbackkultur?",opts:["A) \u00abIch habe beobachtet, dass du heute bei der Aktion sehr laut geworden bist. K\u00f6nnen wir dar\u00fcber reden?\u00bb","B) \u00abDu bist halt einfach nicht teamf\u00e4hig.\u00bb","C) \u00abIch fand gut, wie du reagiert hast. Beim n\u00e4chsten Mal k\u00f6nntest du zus\u00e4tzlich noch\u2026\u00bb","D) \u00abDas hat mich gest\u00f6rt \u2014 aber ich verstehe, dass die Situation schwierig war.\u00bb"],a:"B \u2014 Pauschale Bewertungen der Person (statt des Verhaltens) haben in einer Feedbackkultur nichts verloren. A, C und D sind alle konstruktiv."},
+     {pts:500,type:"Multiple Choice",q:"Welche Gewaltformen werden im GSK ber\u00fccksichtigt?",opts:["A) Sexualisierte Gewalt und k\u00f6rperliche Gewalt.","B) Sexualisierte, k\u00f6rperliche, psychische, verbale und digitale Gewalt sowie Machtmissbrauch.","C) Alle Formen, die im Strafgesetzbuch stehen.","D) Nur Gewaltformen, die von Erwachsenen an Kindern ver\u00fcbt werden."],a:"B \u2014 Seit 2026 deckt das GSK alle genannten Gewaltformen ab, auf allen Beziehungsebenen. A ist veraltet, C zu eng, D falsch."}],
+    // Cat 3: Medien und Datenschutz
+    [{pts:100,type:"Ja oder Nein?",q:"Darfst du \u00abNein\u00bb sagen, wenn jemand ein Foto von dir machen will \u2014 auch wenn deine Eltern eine Fotoerlaubnis unterschrieben haben?",opts:[],a:"Ja. Du hast ein eigenes Widerspruchsrecht, unabh\u00e4ngig von der Einverst\u00e4ndniserkl\u00e4rung deiner Eltern."},
+     {pts:200,type:"Wahr oder Falsch?",q:"Fotos auf dem Lager d\u00fcrfen nebenbei und unauff\u00e4llig gemacht werden, solange die Ergebnisse gut aussehen.",opts:[],a:"Falsch. Es muss immer erkennbar sein, wenn fotografiert oder gefilmt wird. Unauff\u00e4llige Aufnahmen sind nicht erlaubt."},
+     {pts:300,type:"Multiple Choice",q:"Was passiert mit Fotos von Kindern auf den Privathandys der Leiter*innen nach dem Lager?",opts:["A) Die Leiter*innen entscheiden selbst, wie lange sie die Fotos behalten.","B) Die Fotos werden in eine zentrale Ablage hochgeladen und sp\u00e4testens vier Wochen nach dem Lager vom Privatger\u00e4t gel\u00f6scht.","C) Die Fotos werden sofort nach dem Lager von allen Ger\u00e4ten gel\u00f6scht."],a:"B \u2014 Zentrale Ablage und klare Vier-Wochen-L\u00f6schfrist. A stimmt nicht (es gibt feste Regeln), C ist zu streng."},
+     {pts:400,type:"Multiple Choice",q:"Ein*e Leiter*in sitzt auf dem Lager sichtbar mit dem Handy da und scrollt durch Instagram. Was sagt der Verhaltenskodex?",opts:["A) Das ist okay, solange gerade kein Programm l\u00e4uft.","B) Das Handy darf nur f\u00fcr abgesprochene Zwecke genutzt werden \u2014 sichtbares privates Scrollen vor den Kindern ist nicht vorgesehen.","C) Das ist nur f\u00fcr den/die Lagerleiter*in erlaubt."],a:"B \u2014 Die Handyregelung gilt f\u00fcr alle Leitenden. A klingt logisch, steht aber so nicht im Kodex."},
+     {pts:500,type:"Multiple Choice",q:"Was ist \u00abdigitale Gewalt\u00bb und warum steht sie im GSK?",opts:["A) Cybermobbing, Verbreitung von Bildmaterial ohne Einverst\u00e4ndnis, Bel\u00e4stigung \u00fcber Messenger \u2014 sie steht im GSK, weil sie eine eigenst\u00e4ndige Gewaltform ist, die auch unter Kindern vorkommt.","B) Hackerangriffe auf die Stammeswebsite.","C) Wenn Kinder zu viel am Handy sind.","D) Digitale Gewalt betrifft nur Erwachsene und ist deshalb im GSK nicht so relevant."],a:"A \u2014 Digitale Gewalt ist seit 2026 als eigenst\u00e4ndige Gewaltform im GSK verankert. Das Landeskinderschutzgesetz NRW fordert das ausdr\u00fccklich."}],
+    // Cat 4: Körperkontakt und Intimsphäre
+    [{pts:100,type:"Ja oder Nein?",q:"Musst du dich umarmen lassen, wenn ein*e Leiter*in dich zur Begr\u00fc\u00dfung oder zum Trost dr\u00fccken will?",opts:[],a:"Nein. Umarmungen nur, wenn DU die Initiative ergreifst. Leiter*innen initiieren keinen K\u00f6rperkontakt."},
+     {pts:200,type:"Wahr oder Falsch?",q:"Vor einem k\u00f6rperbetonten Spiel (z.B. Ringkampf, Raufball) muss die Leitung pr\u00fcfen, ob es auch eine Variante ohne den K\u00f6rperkontakt gibt.",opts:[],a:"Wahr. Gibt es eine Alternative ohne unangemessenen K\u00f6rperkontakt, wird diese gew\u00e4hlt."},
+     {pts:300,type:"Multiple Choice",q:"Wie ist das Duschen auf dem Lager geregelt?",opts:["A) Alle duschen zusammen \u2014 das ist auf Lagern normal und spart Wasser.","B) Leitende duschen mit den j\u00fcngeren Kindern, damit die nicht allein sind.","C) Einzeln duschen wird erm\u00f6glicht. Leitende duschen immer separat. Wenn Einzelduschen nicht m\u00f6glich ist, gibt es feste Zeiten nach Gruppen."],a:"C \u2014 Die Intimsph\u00e4re hat Vorrang. Leitende duschen nie mit Kindern. B klingt f\u00fcrsorglich, ist aber genau das, was verhindert werden soll."},
+     {pts:400,type:"Multiple Choice",q:"Warum schlafen Leitende und Teilnehmende normalerweise NICHT im selben Zelt?",opts:["A) Weil es keinen Platz gibt.","B) Weil es nur in Ausnahmef\u00e4llen erlaubt ist \u2014 aus p\u00e4dagogisch notwendigen Gr\u00fcnden, mit Einverst\u00e4ndnis des Kindes und nach R\u00fccksprache mit den Sorgeberechtigten.","C) Weil Leitende immer in einem eigenen Leitungszelt schlafen m\u00fcssen.","D) Weil Kinder unter sich besser schlafen."],a:"B \u2014 Es geht um Schutz der Intimsph\u00e4re. C klingt logisch, ist aber zu absolut \u2014 es gibt klar definierte Ausnahmen mit drei Bedingungen."},
+     {pts:500,type:"Multiple Choice",q:"Ein*e Leiter*in schubst auf dem Lager ein Kind \u00abaus Spa\u00df\u00bb ins Wasser. Alle lachen. Ist das eine Grenzverletzung?",opts:["A) Nein, weil alle gelacht haben und es offensichtlich Spa\u00df war.","B) Nur wenn das Kind sich danach beschwert.","C) Ja \u2014 es kommt nicht darauf an, ob andere es lustig fanden, sondern wie die betroffene Person es empfindet. Schubsen ist grunds\u00e4tzlich eine Grenzverletzung.","D) Nein, weil der/die Leiter*in es nicht b\u00f6se gemeint hat."],a:"C \u2014 Die Absicht spielt keine Rolle, und die Reaktion der Umstehenden auch nicht. Entscheidend ist das Empfinden der betroffenen Person."}],
+    // Cat 5: Strukturen und Prävention
+    [{pts:100,type:"Ja oder Nein?",q:"M\u00fcssen alle Leiter*innen den Verhaltenskodex unterschreiben?",opts:[],a:"Ja. Alle Leitenden, Helfenden und der Vorstand unterschreiben den Kodex bei T\u00e4tigkeitsbeginn."},
+     {pts:200,type:"Multiple Choice",q:"Was ist der Verhaltenskodex?",opts:["A) Eine Sammlung von Empfehlungen, an die man sich halten kann, wenn man m\u00f6chte.","B) Verbindliche Regeln f\u00fcr alle Leitenden, die bei T\u00e4tigkeitsbeginn besprochen und unterschrieben werden.","C) Eine Strafenliste, die festlegt, was passiert, wenn man etwas falsch macht."],a:"B \u2014 Der Kodex ist verbindlich, nicht optional. A klingt harmlos, ist aber falsch. C verwechselt den Kodex mit Konsequenzen."},
+     {pts:300,type:"Wahr oder Falsch?",q:"Das Gewaltschutzkonzept (GSK) wird einmal geschrieben und dann f\u00fcr immer benutzt.",opts:[],a:"Falsch. Es wird regelm\u00e4\u00dfig \u00fcberpr\u00fcft und mindestens alle f\u00fcnf Jahre komplett neu evaluiert \u2014 mit einer neuen Risikoanalyse."},
+     {pts:400,type:"Multiple Choice",q:"Was ist der Unterschied zwischen dem alten ISK und dem neuen GSK?",opts:["A) Nur der Name hat sich ge\u00e4ndert.","B) Das GSK betrachtet alle Gewaltformen (nicht nur sexualisierte), enth\u00e4lt eine Risikoanalyse mit Beteiligung der Kinder und wird regelm\u00e4\u00dfig \u00fcberpr\u00fcft.","C) Das GSK ist eine abgespeckte Version des ISK, weil das alte Dokument zu lang war.","D) Das ISK gilt weiterhin und das GSK erg\u00e4nzt es nur."],a:"B \u2014 ISK (2019) behandelte nur sexualisierte Gewalt. GSK (2026) umfasst alle Gewaltformen und hat eine Risiko- und Potentialanalyse mit Kinderbeteiligung."},
+     {pts:500,type:"Multiple Choice",q:"Brauchen alle Leitenden ein erweitertes F\u00fchrungszeugnis \u2014 und wie oft?",opts:["A) Nur die Stammesleitung braucht eins, alle f\u00fcnf Jahre.","B) Alle, die regelm\u00e4\u00dfig mit Kindern und Jugendlichen arbeiten, brauchen eins \u2014 und es muss alle f\u00fcnf Jahre erneuert werden.","C) Nur wenn man hauptberuflich in der Jugendarbeit arbeitet.","D) Ja, aber nur einmal \u2014 das gilt dann ein Leben lang."],a:"B \u2014 Ehrenamtliche Leitende brauchen es genauso wie Hauptamtliche, alle f\u00fcnf Jahre. D ist ein h\u00e4ufiger Irrtum."}]
+  ]
+}
+};
+
+let currentSet = 'jung';
+let doneState = { jung: Array(25).fill(false), alt: Array(25).fill(false) };
+let scores = [0, 0, 0];
+
+function switchSet(set) {
+  currentSet = set;
+  document.getElementById('btn-jung').classList.toggle('active', set==='jung');
+  document.getElementById('btn-alt').classList.toggle('active', set==='alt');
+  renderBoard();
+}
+
+function renderBoard() {
+  const d = DATA[currentSet];
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  // Category headers
+  d.cats.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'cat-header';
+    div.textContent = c;
+    board.appendChild(div);
+  });
+  // 5 rows x 5 cols
+  for (let row = 0; row < 5; row++) {
+    for (let col = 0; col < 5; col++) {
+      const idx = col * 5 + row;
+      const q = d.questions[col][row];
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (doneState[currentSet][idx] ? ' done' : '');
+      cell.textContent = doneState[currentSet][idx] ? '' : q.pts;
+      if (!doneState[currentSet][idx]) {
+        cell.onclick = () => openModal(col, row, idx);
+      }
+      board.appendChild(cell);
+    }
+  }
+}
+
+function openModal(col, row, idx) {
+  const d = DATA[currentSet];
+  const q = d.questions[col][row];
+  document.getElementById('m-cat').textContent = d.cats[col].replace('\n', ' ');
+  document.getElementById('m-pts').textContent = q.pts + ' Punkte';
+  document.getElementById('m-type').textContent = q.type;
+  document.getElementById('m-question').textContent = q.q;
+  const optsList = document.getElementById('m-options');
+  optsList.innerHTML = '';
+  if (q.opts.length) {
+    q.opts.forEach(o => { const li = document.createElement('li'); li.textContent = o; optsList.appendChild(li); });
+    optsList.style.display = 'block';
+  } else {
+    optsList.style.display = 'none';
+  }
+  document.getElementById('m-answer').textContent = q.a;
+  document.getElementById('m-answer').classList.remove('show');
+  document.getElementById('btn-reveal').style.display = 'inline-block';
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('overlay').dataset.idx = idx;
+}
+
+function revealAnswer() {
+  document.getElementById('m-answer').classList.add('show');
+  document.getElementById('btn-reveal').style.display = 'none';
+}
+
+function closeModal() {
+  const idx = parseInt(document.getElementById('overlay').dataset.idx);
+  doneState[currentSet][idx] = true;
+  document.getElementById('overlay').classList.remove('show');
+  renderBoard();
+}
+
+function addScore(team, delta) {
+  scores[team-1] = Math.max(0, scores[team-1] + delta);
+  document.getElementById('score'+team).textContent = scores[team-1];
+}
+
+function resetBoard() {
+  if (!confirm('Board und Punkte zurücksetzen?')) return;
+  doneState = { jung: Array(25).fill(false), alt: Array(25).fill(false) };
+  scores = [0, 0, 0];
+  [1,2,3].forEach(t => document.getElementById('score'+t).textContent = '0');
+  renderBoard();
+}
+
+renderBoard();
+</script>
+</body>
+</html>
